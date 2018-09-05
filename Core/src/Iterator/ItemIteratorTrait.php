@@ -40,6 +40,11 @@ trait ItemIteratorTrait
     private $position = 0;
 
     /**
+     * @var array
+     */
+    private $currentPage = null;
+
+    /**
      * @param \Iterator $pageIterator
      */
     public function __construct(\Iterator $pageIterator)
@@ -76,6 +81,7 @@ trait ItemIteratorTrait
     {
         $this->pageIndex = 0;
         $this->position = 0;
+        $this->currentPage = null;
         $this->pageIterator->rewind();
     }
 
@@ -86,7 +92,7 @@ trait ItemIteratorTrait
      */
     public function current()
     {
-        $page = $this->pageIterator->current();
+        $page = $this->getCurrentPage();
 
         return isset($page[$this->pageIndex])
             ? $page[$this->pageIndex]
@@ -113,10 +119,37 @@ trait ItemIteratorTrait
         $this->pageIndex++;
         $this->position++;
 
-        if (count($this->pageIterator->current()) <= $this->pageIndex && $this->nextResultToken()) {
-            $this->pageIterator->next();
+        if (count($this->getCurrentPage()) <= $this->pageIndex && $this->nextResultToken()) {
+            $this->nextPage();
             $this->pageIndex = 0;
         }
+    }
+
+    /**
+     * Get the current page we're iterating on
+     *
+     * @return array
+     */
+    private function getCurrentPage()
+    {
+        if ($this->currentPage === null) {
+            $this->currentPage = $this->pageIterator->current();
+        }
+
+        return $this->currentPage;
+    }
+
+    /**
+     * Advance the page and set it to the current page
+     *
+     * @return array
+     */
+    private function nextPage()
+    {
+        $this->pageIterator->next();
+        $this->currentPage = $this->pageIterator->current();
+
+        return $this->currentPage;
     }
 
     /**
@@ -126,7 +159,7 @@ trait ItemIteratorTrait
      */
     public function valid()
     {
-        $page = $this->pageIterator->current();
+        $page = $this->getCurrentPage();
 
         if (isset($page[$this->pageIndex])) {
             return true;
@@ -135,8 +168,7 @@ trait ItemIteratorTrait
         // If there are no results, but a token for the next page
         // exists let's continue paging until there are results.
         while ($this->nextResultToken()) {
-            $this->pageIterator->next();
-            $page = $this->pageIterator->current();
+            $page = $this->nextPage();
 
             if (isset($page[$this->pageIndex])) {
                 return true;

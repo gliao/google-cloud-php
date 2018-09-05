@@ -40,7 +40,7 @@ class ItemIteratorTest extends TestCase
             ->shouldBeCalledTimes(3);
         $pageIterator->current()
             ->willReturn($page1)
-            ->shouldBeCalledTimes(19);
+            ->shouldBeCalledTimes(2);
         $pageIterator->next()
             ->will(function () use ($page2) {
                 $this->current()->willReturn($page2);
